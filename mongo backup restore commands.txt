@@ -1,0 +1,5 @@
+to over write data : mongorestore --drop --uri mongodb://localhost:27017/your_database_name /path/to/backup/directory
+ -> example : mongorestore --drop --uri mongodb://localhost:27017/admin C:\backup\dump\admin\admin_users.bson
+
+to restore deleted data only (dont delete existing data) : mongorestore --db=database_name parth
+ -> example : mongorestore --db=admin "C:\backup\dump\admin\admin_users.bson" 
