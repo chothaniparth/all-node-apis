@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { uploadProfileImage, fetchImg , deleteProfileImg} = require('../controllers/user');
+const { uploadProfileImage, fetchImg , deleteProfileImg, updateProfileImage} = require('../controllers/user');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
@@ -23,6 +23,7 @@ const upload = multer({ storage: storage });
 // Routes
 router.post('/upload', upload.single('profile'), uploadProfileImage);
 router.post('/getImage', fetchImg);
-router.delete('/deleteProfileImg', deleteProfileImg)
+router.delete('/deleteProfileImg', deleteProfileImg);
+router.put('/upload',upload.single('profile'), updateProfileImage)
 
 module.exports = router;

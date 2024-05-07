@@ -1,7 +1,7 @@
 const sql = require('mssql/msnodesqlv8');
-
+const server = 'FLUTTER3\\SQLEXPRESS'
 const config = {
-    server : 'FLUTTER3\\SQLEXPRESS',
+    server : server,
     database : 'images_crud',
     driver : 'msnodesqlv8' ,
     options : {

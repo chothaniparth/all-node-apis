@@ -5,20 +5,21 @@ const {DB_connect} = require('../DB_connect');
 DB_connect();
 
 const db = new sql.Request();
-
 async function uploadProfileImage(req, res) {
     if(!req.body.Uname || !req.file.filename){
         return res.json({success : false, msg : 'please fill all fields'})
     } else {
         const quary = `insert into images (Uname, Uprofile) values ('${req.body.Uname}', '${req.file.filename}')`
         // const values = [req.body.Uname, req.file.filename]
-        db.query(quary, (error, result)=>{
+        db.query(quary, async (error, result)=>{
             if(error){
                 console.log('add image error :', error);
+                const deleteOldImage = await fs.unlinkSync(`./media/${req.file.filename}`);
+                // console.log(deleteOldImage);
                 return res.json({success : false, msg : 'system error'})
             } else {
-                console.log('add image result :', req.file);
-                return res.json({success : true,  msg : 'added image successfully'})
+                const serverAddress = `http://${process.env.domain}/media/${req.file.filename}`;
+                return res.json({success : true,  msg : 'added image successfully', url : serverAddress})
             }
         })
     }
@@ -38,7 +39,7 @@ function fetchImg(req, res) {
                     return res.json({ success: false, msg: 'No image found with the provided id' });
                 } else {
                     const imageName = result.recordset[0].Uprofile;
-                    const serverAddress = `http://localhost:8000/media/${imageName}`;
+                    const serverAddress = `http://${process.env.domain}/media/${imageName}`;
                     return res.json({success : true, msg : serverAddress})
                 }
             }
@@ -46,37 +47,60 @@ function fetchImg(req, res) {
     }
 }
 
-function deleteProfileImg(req, res){
-    if(!req.body.id){
+async function deleteProfileImg(req, res) {
+    try {
+        const { id } = req.body;
+        const query = `SELECT Uprofile FROM images WHERE id = ${id}`;
+        
+        const imageResponse = await db.query(query);
 
+        if (imageResponse.recordset.length === 0 || !imageResponse.recordset[0].Uprofile  === null) {
+            return res.json({ success: false, msg: 'Image does not exist' });
+        }
+        const image = imageResponse.recordset[0].Uprofile
+
+        const deleteOldImage = await fs.unlinkSync(`./media/${image}`) 
+        // console.log(deleteOldImage);
+        const deleteFromDatabase = `UPDATE images SET Uprofile = '' WHERE id = ${id}`;
+        const updateResponse =  await db.query(deleteFromDatabase); 
+        // console.log('delte update :', updateResponse);
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('Delete error:', error);
+        return res.json({ success: false, msg: 'System error' });
     }
 }
 
-module.exports = {uploadProfileImage, fetchImg, deleteProfileImg};
+async function updateProfileImage (req, res){
+    try{   
+        const {id} = req.body
+        const {filename} = req.file
+        if(!id || !filename){
+            // console.log(id, filename);
+            return res.json({success : false, msg : 'fill all fields'})
+        }
+        const oldImageQuary = `select Uprofile from images where id = ${id}`
+        const getOldImage = await db.query(oldImageQuary)
+        const image = getOldImage.recordset[0].Uprofile
+        // Delete old image if it exists and is not an empty string
+        if (image && image !== '' && image !== null) {
+            // console.log('Deleting old image:', image);
+            const deleteOldImage = await fs.unlinkSync(`./media/${image}`);
+            // console.log('Old image deleted successfully');
+        }
+        const updateQuary = `update images set Uprofile = '${filename}' where id = ${id}`
+        const newImageAddress = `http://${process.env.domain}/media/${filename}`
+        return res.json({success : true, url : newImageAddress})
+    } catch(error){
+        console.log('update error :', error);
+        const deleteOldImage = await fs.unlinkSync(`./media/${req.file.filename}`);
+        return res.json({success : false, msg : 'system error'})
+    }
+}
 
-
-
-
-// fs.access(imagePath, fs.constants.F_OK, (err) => {
-//     if (err) {
-//         console.log('Image file not found:', err);
-//         return res.json({ success: false, msg: 'Image file not found' });
-//     } else {
-//         // Read the image file
-//         fs.readFile(imagePath, (err, data) => {
-//             if (err) {
-//                 console.log('Error reading image file:', err);
-//                 return res.json({ success: false, msg: 'Error reading image file' });
-//             } else {
-//                 // Set appropriate headers for image response
-//                 res.setHeader('Content-Type', 'image/jpeg'); // Adjust content type based on your image format
-//                 res.setHeader('Content-Disposition', 'inline');
-                
-//                 // Send image data and URL in the response
-//                 res.json({ success: true, imageUrl: imageUrl, imageData: data.toString('base64') });
-//             }
-//         });
-//     }
-// });
-
-
+module.exports = {
+    uploadProfileImage, 
+    fetchImg, 
+    deleteProfileImg, 
+    updateProfileImage
+};
