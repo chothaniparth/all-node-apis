@@ -1,27 +1,65 @@
-// db.js
-const sql = require('mssql');
-
+const sql = require('mssql/msnodesqlv8');
+const { DATABASE_USER, DATABASE_PASSWORD, DATABASE_SERVER, DATABASE_NAME } = process.env;
+// Configuration for the connection
 const config = {
-    user: 'your_db_username',
-    password: 'your_db_password',
-    server: 'your_server_address',
-    database: 'your_database_name',
+    user: 'parth',
+    password: '1234',
+    server: 'FLUTTER3\\SQLEXPRESS',
+    database: 'TaxFilePosterApp',
     options: {
-        encrypt: true, // for Azure
-        trustServerCertificate: true // change to true for local dev / self-signed certs
+        encrypt: false,
+        trustServerCertificate: true,
+        trustedConnection : true
     }
-};
+  };
 
-const poolPromise = new sql.ConnectionPool(config)
-    .connect()
-    .then(pool => {
-        console.log('Connected to MSSQL');
-        return pool;
-    })
-    .catch(err => {
-        console.log('Database Connection Failed! Bad Config: ', err);
-    });
+// Create a function to initialize the pool
+function initializePool(config) {
+    return new sql.ConnectionPool(config);
+}
 
-module.exports = {
-    sql, poolPromise
-};
+// Initialize the pool with the initial configuration
+let pool = initializePool(config);
+
+async function changeDatabase(newDatabase) {
+    try {
+        const updatedConfig = {
+            ...config,
+            database: newDatabase
+        };
+
+        const newPool = initializePool(updatedConfig);
+        await newPool.connect();
+        return newPool;
+    } catch (error) {
+        console.error('Error changing database:', error);
+        throw error; // Rethrow the error to handle it in the calling code
+    }
+}
+
+
+// Function to connect to the database
+async function connectToDatabase() {
+    try {
+        // Connect to the database
+        await pool.connect();
+        console.log('Connected to SQL Server');
+    } catch (error) {
+        console.error('Error connecting to SQL Server:', error);
+        throw error; // Rethrow the error to handle it in the calling code
+    }
+}
+
+// Function to close the database connection
+// async function closeDatabaseConnection() {
+//     try {
+//         // Close the connection pool
+//         await pool.close();
+//         console.log('Connection to SQL Server closed');
+//     } catch (error) {
+//         console.error('Error closing connection to SQL Server:', error);
+//         throw error; // Rethrow the error to handle it in the calling code
+//     }
+// }
+
+module.exports = { sql, pool, connectToDatabase, changeDatabase };

@@ -1,9 +1,9 @@
+import {useEffect} from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./css/login.css";
-import SignUp from './SignUp';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,6 +39,14 @@ const Login = () => {
     },
   });
   const { handleSubmit, handleChange, errors, values, touched } = formik;
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('Taxposter');
+    if (token) {
+      navigate('/home');
+    }
+  }, []);
 
   const SignUp = ()=>{
     navigate('/signup')
