@@ -1,10 +1,12 @@
-const sql = require('mssql/msnodesqlv8');
+const sql = require('mssql');
+
+const {SQLServerName, DatabaseNamw, user, password} = require('./common/variable')
 
 const config = {
-    user: 'parth',
-    password: '1234',
-    server: 'FLUTTER3\\SQLEXPRESS',
-    database: 'chatapp',
+    user: user,
+    password: password,
+    server: SQLServerName,
+    database: DatabaseNamw,
     options: {
         encrypt: false,
         trustServerCertificate: true,
@@ -13,6 +15,8 @@ const config = {
   };
 
 function initializePool(config) {
+    console.log(typeof config.server);
+    console.log(config);
     return new sql.ConnectionPool(config);
 }
 
